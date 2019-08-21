@@ -62,7 +62,7 @@ resource "openstack_compute_instance_v2" "thor_master" {
     image_name          = "${var.image_name}"
     flavor_name         = "${var.thor_master_flavor_name}"
     key_pair            = "${openstack_compute_keypair_v2.terraform_key.name}"
-    security_groups     = ["${openstack_compute_secgroup_v2.thor_master.name}","default"]
+    security_groups     = ["${openstack_compute_secgroup_v2.thor_master.id}","default"]
     availability_zone   = "${openstack_blockstorage_volume_v2.thor_master_volume.availability_zone}"
     user_data           = "${data.template_file.thor_master_user_data.rendered}"
     

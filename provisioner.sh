@@ -71,6 +71,7 @@ move_dir () {
 move_dir /usr/local
 move_dir /opt
 move_dir /var/lib/HPCCSystems
+move_dir /var/log/HPCCSystems
 
 # ---
 # Install dependencies
@@ -98,5 +99,5 @@ B=$(cat /tmp/${hpcc_download_filename}.md5 | awk '{print $1}')
 
 if [[ $A = $B ]]; then
     yum install "/tmp/"${hpcc_download_filename} -y
-    /etc/init.d/hpcc-init start
+    # /etc/init.d/hpcc-init start
 fi
