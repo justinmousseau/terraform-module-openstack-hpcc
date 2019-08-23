@@ -25,7 +25,7 @@ else
     mkfs.xfs ${device}
     mkdir -p ${mountpoint}
     
-    sleep 10
+    sleep 5
 
     grep ${mountpoint} /etc/fstab
     if [ $? -ne 0 ]
@@ -78,7 +78,8 @@ move_dir /var/log/HPCCSystems
 # ---
 
 # Enable EPEL
-sed -i '/LN-epel/{n;n;n;s/0/1/}' /etc/yum.repos.d/LexisNexis.repo
+# sed -i '/LN-epel/{n;n;n;s/enabled=0/enabled=1/}' /etc/yum.repos.d/LexisNexis.repo
+sed -i '/LN-epel/,/enabled=0/ s/enabled=0/enabled=1/' /etc/yum.repos.d/LexisNexis.repo
 
 # Copy RPM-GPG-KEY for EPEL-7 into /etc/pki/rpm-gpg
 cp /etc/pki/rpm-gpg/files/RPM-GPG-KEY-EPEL-7 /etc/pki/rpm-gpg
@@ -99,5 +100,10 @@ B=$(cat /tmp/${hpcc_download_filename}.md5 | awk '{print $1}')
 
 if [[ $A = $B ]]; then
     yum install "/tmp/"${hpcc_download_filename} -y
-    # /etc/init.d/hpcc-init start
+
+    # We must update the /etc/pam.d/su file to skip calling system-auth for user hpcc at session level
+    # otherwise hpcc-init takes too long to execute waiting for timeout with each su call
+    sed -i '0,/session/ s//session         [success=ignore default=1] pam_succeed_if.so user = hpcc\nsession         sufficient      pam_unix.so\nsession/' /etc/pam.d/su
+
+    /etc/init.d/hpcc-init start
 fi
