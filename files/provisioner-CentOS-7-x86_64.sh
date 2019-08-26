@@ -5,7 +5,7 @@
 # ---
 
 LOG=/var/log/provision.log
-exec >$LOG 2>&1
+exec >$LOG 2>&1 # write stdout and stderr to logfile
 set -x
 
 # ---
@@ -68,8 +68,8 @@ move_dir () {
     fi
 }
 
-move_dir /usr/local
-move_dir /opt
+# move_dir /usr/local
+# move_dir /opt
 move_dir /var/lib/HPCCSystems
 move_dir /var/log/HPCCSystems
 
@@ -78,7 +78,6 @@ move_dir /var/log/HPCCSystems
 # ---
 
 # Enable EPEL
-# sed -i '/LN-epel/{n;n;n;s/enabled=0/enabled=1/}' /etc/yum.repos.d/LexisNexis.repo
 sed -i '/LN-epel/,/enabled=0/ s/enabled=0/enabled=1/' /etc/yum.repos.d/LexisNexis.repo
 
 # Copy RPM-GPG-KEY for EPEL-7 into /etc/pki/rpm-gpg
@@ -98,12 +97,18 @@ wget -a /var/log/wget.log -P /tmp ${hpcc_download_url}${hpcc_download_filename}.
 A=$(md5sum /tmp/${hpcc_download_filename} | awk '{print $1}')
 B=$(cat /tmp/${hpcc_download_filename}.md5 | awk '{print $1}')
 
-if [[ $A = $B ]]; then
+if [[ $A = $B ]]
+then
     yum install "/tmp/"${hpcc_download_filename} -y
 
     # We must update the /etc/pam.d/su file to skip calling system-auth for user hpcc at session level
     # otherwise hpcc-init takes too long to execute waiting for timeout with each su call
     sed -i '0,/session/ s//session         [success=ignore default=1] pam_succeed_if.so user = hpcc\nsession         sufficient      pam_unix.so\nsession/' /etc/pam.d/su
 
-    /etc/init.d/hpcc-init start
+    if [ `hostname -s` == "thor-master" ]
+    then
+        /etc/init.d/hpcc-init start
+    fi
+
+    echo "Provisioning complete!"
 fi
