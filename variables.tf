@@ -2,6 +2,10 @@ variable "device" {
     default = "/dev/vdb"
 }
 
+variable "environment_filename" {
+    default = ""
+}
+
 variable "mountpoint" {
     default = "/mnt/vdb"
 }
@@ -24,12 +28,10 @@ variable "network_name" {}
 
 variable "subnet_name" {}
 
-variable "thor_master_disk" {}
-
-variable "thor_master_flavor_name" {}
-
 variable "thor_slave_count" {}
 
 variable "thor_slave_flavor_name" {}
 
-variable "total_disk" {}
+variable "thor_slave_total_disk" {}
+
+variable "support_nodes" {}

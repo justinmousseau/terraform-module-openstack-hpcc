@@ -105,10 +105,14 @@ then
     # otherwise hpcc-init takes too long to execute waiting for timeout with each su call
     sed -i '0,/session/ s//session         [success=ignore default=1] pam_succeed_if.so user = hpcc\nsession         sufficient      pam_unix.so\nsession/' /etc/pam.d/su
 
-    if [ `hostname -s` == "thor-master" ]
-    then
-        /etc/init.d/hpcc-init start
-    fi
+    # if [ `hostname -s` == "thor-support-01" ]
+    # then
+    #     /etc/init.d/hpcc-init start
+    # fi
+
+    mv /tmp/environment.xml /etc/HPCCSystems/
+    chown hpcc:hpcc /etc/HPCCSystems/environment.xml
+    # /etc/init.d/hpcc-init start
 
     echo "Provisioning complete!"
 fi
