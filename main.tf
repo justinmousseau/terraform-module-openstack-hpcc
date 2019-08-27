@@ -98,7 +98,7 @@ resource "openstack_compute_instance_v2" "thor_support" {
     }
 
     provisioner "file" {
-        source          = "${path.module}/files/${var.environment_filename}"
+        content         = "${var.environment_filename == "" ? " " : file("${path.module}/files/${var.environment_filename}")}"
         destination     = "/tmp/environment.xml"
     
         connection {
@@ -126,7 +126,7 @@ resource "openstack_compute_instance_v2" "thor_slave" {
     }
 
     provisioner "file" {
-        source          = "${path.module}/files/${var.environment_filename}"
+        content         = "${var.environment_filename == "" ? " " : file("${path.module}/files/${var.environment_filename}")}"
         destination     = "/tmp/environment.xml"
     
         connection {
