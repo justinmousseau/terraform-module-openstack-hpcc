@@ -90,8 +90,8 @@ yum update -y
 # ---
 
 # Download package and md5sum
-wget -a /var/log/wget.log -P /tmp ${hpcc_download_url}${hpcc_download_filename}
-wget -a /var/log/wget.log -P /tmp ${hpcc_download_url}${hpcc_download_filename}.md5
+wget -a /var/log/wget.log -P /tmp ${hpcc_download_url}/${hpcc_download_filename}
+wget -a /var/log/wget.log -P /tmp ${hpcc_download_url}/${hpcc_download_filename}.md5
 
 # Compare checksum
 A=$(md5sum /tmp/${hpcc_download_filename} | awk '{print $1}')
@@ -99,7 +99,7 @@ B=$(cat /tmp/${hpcc_download_filename}.md5 | awk '{print $1}')
 
 if [[ $A = $B ]]
 then
-    yum install "/tmp/"${hpcc_download_filename} -y
+    yum install /tmp/${hpcc_download_filename} -y
 
     # We must update the /etc/pam.d/su file to skip calling system-auth for user hpcc at session level
     # otherwise hpcc-init takes too long to execute waiting for timeout with each su call
@@ -109,8 +109,77 @@ then
     then
         mv /tmp/environment.xml /etc/HPCCSystems/
         chown hpcc:hpcc /etc/HPCCSystems/environment.xml
-        /etc/init.d/hpcc-init start
+    fi
+fi
+
+# ---
+# Install Zeppelin
+# ---
+
+PROXY=bdmzproxyout.risk.regn.net:80
+
+if [[ `hostname -s` = "thor-support-01" ]]
+then
+
+    wget -e http_proxy=$PROXY -a /var/log/wget.log -P /tmp ${zeppelin_download_url}/${zeppelin_download_filename}
+    wget -e http_proxy=$PROXY -a /var/log/wget.log -P /tmp ${zeppelin_hash_url}/${zeppelin_download_filename}.sha512
+
+    # Compare checksum
+    A=$(sha512sum /tmp/${zeppelin_download_filename} | awk '{print $1}')
+    B=$(cat /tmp/${zeppelin_download_filename}.sha512 | awk '{print $1}')
+
+    if [[ $A = $B ]]
+    then
+        
+        # Create JAVA_HOME and JRE_HOME environment variables
+        # JAVA_PATH=$(readlink -f /bin/java)
+        JAVA_PATH=$(readlink -f $(which java))
+        JAVA_PATH=$${JAVA_PATH%"/jre/bin/java"}
+
+        echo "#!/bin/sh" >> /etc/profile.d/java_home.sh
+        echo "export JAVA_HOME=$${JAVA_PATH}" >> /etc/profile.d/java_home.sh
+        echo "export JRE_HOME=$${JAVA_PATH}/jre" >> /etc/profile.d/java_home.sh
+
+        source /etc/profile
+
+        # Install Zeppelin
+        tar xf /tmp/${zeppelin_download_filename} -C /opt
+        mv /opt/zeppelin-*-bin-all /opt/zeppelin
+
+        # Configure Systemd service
+        adduser -d /opt/zeppelin -s /sbin/nologin zeppelin
+        chown -R zeppelin:zeppelin /opt/zeppelin
+        printf "%s\n" \
+            "[Unit]" \
+            "Description=Zeppelin service" \
+            "After=syslog.target network.target" \
+            "" \
+            "[Service]" \
+            "Type=forking" \
+            "ExecStart=/opt/zeppelin/bin/zeppelin-daemon.sh start" \
+            "ExecStop=/opt/zeppelin/bin/zeppelin-daemon.sh stop" \
+            "ExecReload=/opt/zeppelin/bin/zeppelin-daemon.sh reload" \
+            "User=zeppelin" \
+            "Group=zeppelin" \
+            "Restart=always" \
+            "" \
+            "[Install]" \
+            "WantedBy=multi-user.target" > /etc/systemd/system/zeppelin.service
+        systemctl start zeppelin
+        systemctl enable zeppelin
+        systemctl status zeppelin
+
     fi
 
-    echo "Provisioning complete!"
 fi
+
+# ---
+# Start cluster
+# ---
+
+if [[ `hostname -s` = "thor-support-01" ]]
+then
+    /opt/HPCCSystems/sbin/hpcc-run.sh -a hpcc-init start
+fi
+
+echo "Provisioning complete!"

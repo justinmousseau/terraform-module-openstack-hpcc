@@ -35,3 +35,9 @@ variable "thor_slave_flavor_name" {}
 variable "thor_slave_total_disk" {}
 
 variable "support_nodes" {}
+
+variable "zeppelin_download_filename" {}
+
+variable "zeppelin_download_url" {}
+
+variable "zeppelin_hash_url" {}
