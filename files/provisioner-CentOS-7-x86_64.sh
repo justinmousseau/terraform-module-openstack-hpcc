@@ -132,7 +132,6 @@ then
     then
         
         # Create JAVA_HOME and JRE_HOME environment variables
-        # JAVA_PATH=$(readlink -f /bin/java)
         JAVA_PATH=$(readlink -f $(which java))
         JAVA_PATH=$${JAVA_PATH%"/jre/bin/java"}
 
@@ -176,10 +175,5 @@ fi
 # ---
 # Start cluster
 # ---
-
-if [[ `hostname -s` = "thor-support-01" ]]
-then
-    /opt/HPCCSystems/sbin/hpcc-run.sh -a hpcc-init start
-fi
 
 echo "Provisioning complete!"
