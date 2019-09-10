@@ -135,9 +135,10 @@ then
         JAVA_PATH=$(readlink -f $(which java))
         JAVA_PATH=$${JAVA_PATH%"/jre/bin/java"}
 
-        echo "#!/bin/sh" >> /etc/profile.d/java_home.sh
-        echo "export JAVA_HOME=$${JAVA_PATH}" >> /etc/profile.d/java_home.sh
-        echo "export JRE_HOME=$${JAVA_PATH}/jre" >> /etc/profile.d/java_home.sh
+        printf "%s\n" \
+            "#!/bin/sh" \
+            "export JAVA_HOME=$${JAVA_PATH}" \
+            "export JRE_HOME=$${JAVA_PATH}/jre" > /etc/profile.d/java_home.sh
 
         source /etc/profile
 
@@ -148,6 +149,7 @@ then
         # Configure Systemd service
         adduser -d /opt/zeppelin -s /sbin/nologin zeppelin
         chown -R zeppelin:zeppelin /opt/zeppelin
+        
         printf "%s\n" \
             "[Unit]" \
             "Description=Zeppelin service" \
@@ -164,6 +166,7 @@ then
             "" \
             "[Install]" \
             "WantedBy=multi-user.target" > /etc/systemd/system/zeppelin.service
+        
         systemctl start zeppelin
         systemctl enable zeppelin
         systemctl status zeppelin
@@ -177,3 +180,4 @@ fi
 # ---
 
 echo "Provisioning complete!"
+exit 0
