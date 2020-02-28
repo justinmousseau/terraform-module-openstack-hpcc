@@ -27,9 +27,11 @@ else
     echo "Attempting to mount ${device}"
     mount ${mountpoint}
     if [ $? -eq 0 ]
+    then
         echo "Failed to mount. Formatting ${device}"
         mkfs.xfs ${device}
         mount ${mountpoint}
+    fi
     
     sleep 5
 
