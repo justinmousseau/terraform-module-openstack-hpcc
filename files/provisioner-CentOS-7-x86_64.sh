@@ -26,7 +26,7 @@ else
     # To avoid deleting files from existing volumes, we will first attempt to mount them without formatting. 
     echo "Attempting to mount ${device}"
     mount ${mountpoint}
-    if [ $? -eq 0 ]
+    if [ $? -ne 0 ]
     then
         echo "Failed to mount. Formatting ${device}"
         mkfs.xfs ${device}
