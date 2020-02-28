@@ -1,9 +1,9 @@
 data "openstack_networking_network_v2" "network" {
-    name                        = "${var.network_name}"
+    name                        = var.network_name
 }
 
 data "openstack_networking_subnet_v2" "subnet" {
-    name                        = "${var.subnet_name}"
+    name                        = var.subnet_name
 }
 
 data "openstack_networking_secgroup_v2" "default" {
@@ -12,7 +12,7 @@ data "openstack_networking_secgroup_v2" "default" {
 
 resource "openstack_compute_keypair_v2" "terraform_key" {
     name                        = "terraform-key"
-    public_key                  = "${file(var.ssh_key_public)}"
+    public_key                  = file(var.ssh_key_public)
 }
 
 resource "openstack_networking_secgroup_v2" "thor_portal" {
