@@ -17,13 +17,19 @@ if [ $? -eq 0 ]
 then
     echo "${device} was already mounted"
 else
-    echo "Format ${device}"
-
     # This block is necessary to prevent provisioner from contiuing before volume is attached
     while [ ! -b ${device} ]; do sleep 1; done
-
-    mkfs.xfs ${device}
+    
+    # Create the mountpoint. By default, this is /mnt/vdb/
     mkdir -p ${mountpoint}
+    
+    # To avoid deleting files from existing volumes, we will first attempt to mount them without formatting. 
+    echo "Attempting to mount ${device}"
+    mount ${mountpoint}
+    if [ $? -eq 0 ]
+        echo "Failed to mount. Formatting ${device}"
+        mkfs.xfs ${device}
+        mount ${mountpoint}
     
     sleep 5
 
@@ -34,9 +40,6 @@ else
         FS_UUID=$(lsblk -no UUID ${device})
         echo "UUID=$FS_UUID ${mountpoint}    xfs    noatime    0 0" >> /etc/fstab
     fi
-
-    echo "Mount ${device}"
-    mount ${mountpoint}
 fi
 
 df -h
