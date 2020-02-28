@@ -19,22 +19,21 @@ then
 else
     # This block is necessary to prevent provisioner from contiuing before volume is attached
     while [ ! -b ${device} ]; do sleep 1; done
-    
+
     # Create the mountpoint. By default, this is /mnt/vdb/
     mkdir -p ${mountpoint}
-    
-    # To avoid deleting files from existing volumes, we will first attempt to mount them without formatting. 
-    echo "Attempting to mount ${device}"
-    mount ${mountpoint}
-    if [ $? -ne 0 ]
-    then
-        echo "Failed to mount. Formatting ${device}"
-        mkfs.xfs ${device}
-        mount ${mountpoint}
-    fi
-    
-    sleep 5
 
+    # To avoid deleting files from existing volumes, we will first Check to see if volume is formatted
+    FS_UUID=$(lsblk -no UUID ${device})
+    echo "Testing if volume ${device} is formatted"
+    if [[ $FS_UUID = "" ]]
+    then
+        echo "Volume not formatted. Formatting ${device}"
+        mkfs.xfs ${device}
+        sleep 5
+    fi
+
+    # Add volume to /etc/fstab
     grep ${mountpoint} /etc/fstab
     if [ $? -ne 0 ]
     then
@@ -42,6 +41,8 @@ else
         FS_UUID=$(lsblk -no UUID ${device})
         echo "UUID=$FS_UUID ${mountpoint}    xfs    noatime    0 0" >> /etc/fstab
     fi
+
+    mount ${mountpoint}
 fi
 
 df -h
@@ -86,7 +87,8 @@ move_dir /var/log/HPCCSystems
 sed -i '/LN-epel/,/enabled=0/ s/enabled=0/enabled=1/' /etc/yum.repos.d/LexisNexis.repo
 
 # Copy RPM-GPG-KEY for EPEL-7 into /etc/pki/rpm-gpg
-cp /etc/pki/rpm-gpg/files/RPM-GPG-KEY-EPEL-7 /etc/pki/rpm-gpg
+# cp /etc/pki/rpm-gpg/files/RPM-GPG-KEY-EPEL-7 /etc/pki/rpm-gpg
+cp /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 /etc/pki/rpm-gpg
 
 yum update -y
 
@@ -123,7 +125,7 @@ fi
 
 PROXY=bdmzproxyout.risk.regn.net:80
 
-if [[ `hostname -s` = "thor-support-01" ]]
+if [[ `hostname -s` = "thor-support-01" && "${zeppelin_download_filename}" != "" ]]
 then
 
     wget -e http_proxy=$PROXY -a /var/log/wget.log -P /tmp ${zeppelin_download_url}/${zeppelin_download_filename}

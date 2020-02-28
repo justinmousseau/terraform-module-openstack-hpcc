@@ -36,7 +36,9 @@ variable "thor_slave_total_disk" {}
 
 variable "support_nodes" {}
 
-variable "zeppelin_download_filename" {}
+variable "zeppelin_download_filename" {
+    default = ""
+}
 
 variable "zeppelin_download_url" {}
 
