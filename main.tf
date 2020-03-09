@@ -97,18 +97,18 @@ resource "openstack_compute_instance_v2" "thor_support" {
         port                    = element(openstack_networking_port_v2.thor_support_port.*.id, count.index)
     }
 
-    provisioner "file" {
-        content                 = (var.environment_filename == "" ? " " : file("${path.module}/files/${var.environment_filename}"))
-        destination             = "/tmp/environment.xml"
+    # provisioner "file" {
+    #     content                 = (var.environment_filename == "" ? " " : file("${path.module}/files/${var.environment_filename}"))
+    #     destination             = "/tmp/environment.xml"
     
-        connection {
-            type                = "ssh"
-            user                = "centos"
-            host                = element(openstack_networking_port_v2.thor_support_port.*.all_fixed_ips.0, count.index)
-            private_key         = file(var.ssh_key_private)
-            agent               = false
-        }
-    }
+    #     connection {
+    #         type                = "ssh"
+    #         user                = "centos"
+    #         host                = element(openstack_networking_port_v2.thor_support_port.*.all_fixed_ips.0, count.index)
+    #         private_key         = file(var.ssh_key_private)
+    #         agent               = false
+    #     }
+    # }
 }
 
 resource "openstack_compute_instance_v2" "thor_slave" {
@@ -125,18 +125,18 @@ resource "openstack_compute_instance_v2" "thor_slave" {
         port                    = element(openstack_networking_port_v2.thor_slave_port.*.id, count.index)
     }
 
-    provisioner "file" {
-        content                 = (var.environment_filename == "" ? " " : file("${path.module}/files/${var.environment_filename}"))
-        destination             = "/tmp/environment.xml"
+    # provisioner "file" {
+    #     content                 = (var.environment_filename == "" ? " " : file("${path.module}/files/${var.environment_filename}"))
+    #     destination             = "/tmp/environment.xml"
     
-        connection {
-            type                = "ssh"
-            user                = "centos"
-            host                = element(openstack_networking_port_v2.thor_slave_port.*.all_fixed_ips.0, count.index)
-            private_key         = file(var.ssh_key_private)
-            agent               = false
-        }
-    }
+    #     connection {
+    #         type                = "ssh"
+    #         user                = "centos"
+    #         host                = element(openstack_networking_port_v2.thor_slave_port.*.all_fixed_ips.0, count.index)
+    #         private_key         = file(var.ssh_key_private)
+    #         agent               = false
+    #     }
+    # }
 }
 
 resource "openstack_compute_volume_attach_v2" "thor_support_attach" {
@@ -168,6 +168,10 @@ data "template_file" "thor_support_user_data" {
         device                      = var.device
         mountpoint                  = var.mountpoint
         ip                          = element(openstack_networking_port_v2.thor_support_port.*.all_fixed_ips.0, count.index)
+
+        first_ip                    = element(openstack_networking_port_v2.thor_support_port.*.all_fixed_ips.0, 0)
+        support_count               = length(var.support_nodes)
+        thor_count                  = var.thor_slave_count
     }
 }
 
@@ -184,5 +188,9 @@ data "template_file" "thor_slave_user_data" {
         device                      = var.device
         mountpoint                  = var.mountpoint
         ip                          = element(openstack_networking_port_v2.thor_slave_port.*.all_fixed_ips.0, count.index)
+
+        first_ip                    = element(openstack_networking_port_v2.thor_support_port.*.all_fixed_ips.0, 0)
+        support_count               = length(var.support_nodes)
+        thor_count                  = var.thor_slave_count
     }
 }

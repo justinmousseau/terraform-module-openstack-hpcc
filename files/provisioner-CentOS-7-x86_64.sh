@@ -87,10 +87,28 @@ move_dir /var/log/HPCCSystems
 sed -i '/LN-epel/,/enabled=0/ s/enabled=0/enabled=1/' /etc/yum.repos.d/LexisNexis.repo
 
 # Copy RPM-GPG-KEY for EPEL-7 into /etc/pki/rpm-gpg
-# cp /etc/pki/rpm-gpg/files/RPM-GPG-KEY-EPEL-7 /etc/pki/rpm-gpg
-cp /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 /etc/pki/rpm-gpg
+cp /home/centos/RPM-GPG-KEY-EPEL-7 /etc/pki/rpm-gpg
 
 yum update -y
+
+# Install Java
+yum install java-1.8.0-openjdk -y
+
+# Create JAVA_HOME and JRE_HOME environment variables
+JAVA_PATH=$(readlink -f $(which java) | sed 's|/jre/bin/java||')
+
+printf "%s\n" \
+    "#!/bin/sh" \
+    "export JAVA_HOME=$${JAVA_PATH}" \
+    "export JRE_HOME=$${JAVA_PATH}/jre" \
+    "export PATH=$PATH:$${JAVA_PATH}/bin:$${JAVA_PATH}/jre/bin" > /etc/profile.d/java_home.sh
+
+# source /etc/profile
+
+printf "%s\n" \
+    "export JAVA_HOME=$${JAVA_PATH}" \
+    "export JRE_HOME=$${JAVA_PATH}/jre" \
+    "export PATH=$PATH:$${JAVA_PATH}/bin:$${JAVA_PATH}/jre/bin" >> /home/centos/.bash_profile
 
 # ---
 # Install HPCC
@@ -112,21 +130,30 @@ then
     # otherwise hpcc-init takes too long to execute waiting for timeout with each su call
     sed -i '0,/session/ s//session         [success=ignore default=1] pam_succeed_if.so user = hpcc\nsession         sufficient      pam_unix.so\nsession/' /etc/pam.d/su
 
-    if [[ $(< /tmp/environment.xml) != " " ]] 
-    then
-        mv /tmp/environment.xml /etc/HPCCSystems/
-        chown hpcc:hpcc /etc/HPCCSystems/environment.xml
-    fi
+    # if [[ $(< /tmp/environment.xml) != " " ]] 
+    # then
+    #     mv /tmp/environment.xml /etc/HPCCSystems/
+    #     chown hpcc:hpcc /etc/HPCCSystems/environment.xml
+    # fi
+
+    # Create environment.xml file
+    IP_NODE="$(cut -d '.' -f 4 <<< "${first_ip}")"
+
+    /opt/HPCCSystems/sbin/envgen2 \
+        -env-out /etc/HPCCSystems/environment.xml \
+        -ip ${first_ip}-$(($IP_NODE + ${support_count} + ${thor_count} - 1)) \
+        -supportnodes ${support_count} \
+        -thornodes ${thor_count}
 fi
 
 # ---
 # Install Zeppelin
 # ---
 
-PROXY=bdmzproxyout.risk.regn.net:80
-
 if [[ `hostname -s` = "thor-support-01" && "${zeppelin_download_filename}" != "" ]]
 then
+
+    PROXY=bdmzproxyout.risk.regn.net:80
 
     wget -e http_proxy=$PROXY -a /var/log/wget.log -P /tmp ${zeppelin_download_url}/${zeppelin_download_filename}
     wget -e http_proxy=$PROXY -a /var/log/wget.log -P /tmp ${zeppelin_hash_url}/${zeppelin_download_filename}.sha512
@@ -137,17 +164,6 @@ then
 
     if [[ $A = $B ]]
     then
-        
-        # Create JAVA_HOME and JRE_HOME environment variables
-        JAVA_PATH=$(readlink -f $(which java))
-        JAVA_PATH=$${JAVA_PATH%"/jre/bin/java"}
-
-        printf "%s\n" \
-            "#!/bin/sh" \
-            "export JAVA_HOME=$${JAVA_PATH}" \
-            "export JRE_HOME=$${JAVA_PATH}/jre" > /etc/profile.d/java_home.sh
-
-        source /etc/profile
 
         # Install Zeppelin
         tar xf /tmp/${zeppelin_download_filename} -C /opt
@@ -185,6 +201,8 @@ fi
 # ---
 # Start cluster
 # ---
+
+/opt/HPCCSystems/sbin/hpcc-run.sh -a hpcc-init status
 
 echo "Provisioning complete!"
 exit 0
