@@ -138,23 +138,27 @@ fi
 # Install Zeppelin
 # ---
 
-if [[ `hostname -s` = "thor-support-01" && "${zeppelin_download_filename}" != "" ]]
+if [[ `hostname -s` = "thor-support-01" && "${zeppelin_version}" != "" ]]
 then
 
     PROXY=bdmzproxyout.risk.regn.net:80
 
-    wget -e http_proxy=$PROXY -a /var/log/wget.log -P /tmp ${zeppelin_download_url}/${zeppelin_download_filename}
-    wget -e http_proxy=$PROXY -a /var/log/wget.log -P /tmp ${zeppelin_hash_url}/${zeppelin_download_filename}.sha512
+    ZEPPELIN_DOWNLOAD_FILENAME=${zeppelin_version}-bin-all.tgz
+    ZEPPELIN_DOWNLOAD_URL=${zeppelin_download_url}/${zeppelin_version}
+    ZEPPELIN_HASH_URL=${zeppelin_hash_url}/${zeppelin_version}
+
+    wget -e http_proxy=$PROXY -a /var/log/wget.log -P /tmp $ZEPPELIN_DOWNLOAD_URL/$ZEPPELIN_DOWNLOAD_FILENAME
+    wget -e http_proxy=$PROXY -a /var/log/wget.log -P /tmp $ZEPPELIN_HASH_URL/$ZEPPELIN_DOWNLOAD_FILENAME.sha512
 
     # Compare checksum
-    A=$(sha512sum /tmp/${zeppelin_download_filename} | awk '{print $1}')
-    B=$(cat /tmp/${zeppelin_download_filename}.sha512 | awk '{print $1}')
+    A=$(sha512sum /tmp/$ZEPPELIN_DOWNLOAD_FILENAME | awk '{print $1}')
+    B=$(cat /tmp/$ZEPPELIN_DOWNLOAD_FILENAME.sha512 | awk '{print $1}')
 
     if [[ $A = $B ]]
     then
 
         # Install Zeppelin
-        tar xf /tmp/${zeppelin_download_filename} -C /opt
+        tar xf /tmp/$ZEPPELIN_DOWNLOAD_FILENAME -C /opt
         mv /opt/zeppelin-*-bin-all /opt/zeppelin
 
         # Configure Systemd service

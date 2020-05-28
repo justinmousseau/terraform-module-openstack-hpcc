@@ -162,8 +162,8 @@ data "template_file" "thor_support_user_data" {
     vars = {
         hpcc_download_url           = var.hpcc_download_url
         hpcc_download_filename      = var.hpcc_download_filename
+        zeppelin_version            = var.zeppelin_version
         zeppelin_download_url       = var.zeppelin_download_url
-        zeppelin_download_filename  = var.zeppelin_download_filename
         zeppelin_hash_url           = var.zeppelin_hash_url
         device                      = var.device
         mountpoint                  = var.mountpoint
@@ -182,8 +182,8 @@ data "template_file" "thor_slave_user_data" {
     vars = {
         hpcc_download_url           = var.hpcc_download_url
         hpcc_download_filename      = var.hpcc_download_filename
+        zeppelin_version            = var.zeppelin_version
         zeppelin_download_url       = var.zeppelin_download_url
-        zeppelin_download_filename  = var.zeppelin_download_filename
         zeppelin_hash_url           = var.zeppelin_hash_url
         device                      = var.device
         mountpoint                  = var.mountpoint
