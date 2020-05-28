@@ -103,8 +103,6 @@ printf "%s\n" \
     "export JRE_HOME=$${JAVA_PATH}/jre" \
     "export PATH=$PATH:$${JAVA_PATH}/bin:$${JAVA_PATH}/jre/bin" > /etc/profile.d/java_home.sh
 
-# source /etc/profile
-
 printf "%s\n" \
     "export JAVA_HOME=$${JAVA_PATH}" \
     "export JRE_HOME=$${JAVA_PATH}/jre" \
@@ -125,16 +123,6 @@ B=$(cat /tmp/${hpcc_download_filename}.md5 | awk '{print $1}')
 if [[ $A = $B ]]
 then
     yum install /tmp/${hpcc_download_filename} -y
-
-    # We must update the /etc/pam.d/su file to skip calling system-auth for user hpcc at session level
-    # otherwise hpcc-init takes too long to execute waiting for timeout with each su call
-    sed -i '0,/session/ s//session         [success=ignore default=1] pam_succeed_if.so user = hpcc\nsession         sufficient      pam_unix.so\nsession/' /etc/pam.d/su
-
-    # if [[ $(< /tmp/environment.xml) != " " ]] 
-    # then
-    #     mv /tmp/environment.xml /etc/HPCCSystems/
-    #     chown hpcc:hpcc /etc/HPCCSystems/environment.xml
-    # fi
 
     # Create environment.xml file
     IP_NODE="$(cut -d '.' -f 4 <<< "${first_ip}")"
@@ -202,7 +190,7 @@ fi
 # Start cluster
 # ---
 
-/opt/HPCCSystems/sbin/hpcc-run.sh -a hpcc-init status
+/opt/HPCCSystems/sbin/hpcc-run.sh -a hpcc-init start
 
 echo "Provisioning complete!"
 exit 0
